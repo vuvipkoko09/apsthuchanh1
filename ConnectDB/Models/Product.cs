@@ -20,15 +20,15 @@ namespace ConnectDB.Models
         [Required]
         public int CategoryId { get; set; }
         [ForeignKey("CategoryId")]
-        public virtual Category Category { get; set; }
+        public virtual Category? Category { get; set; }
 
         // Khóa ngoại liên kết tới Brand
         [Required]
         public int BrandId { get; set; }
         [ForeignKey("BrandId")]
-        public virtual Brand Brand { get; set; }
+        public virtual Brand? Brand { get; set; }
 
         // Navigation Property: 1 Product có nhiều mã IMEI
-        public virtual ICollection<SerialNumber> SerialNumbers { get; set; }
+        public virtual ICollection<SerialNumber>? SerialNumbers { get; set; }
     }
 }
