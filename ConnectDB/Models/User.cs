@@ -24,6 +24,6 @@ namespace ConnectDB.Models
         public string Role { get; set; } // Ví dụ: "Admin" hoặc "Staff"
 
         // Navigation Property: 1 User có thể tạo nhiều Phiếu giao dịch
-        public virtual ICollection<InventoryTransaction> InventoryTransactions { get; set; }
+        public virtual ICollection<InventoryTransaction>? InventoryTransactions { get; set; }
     }
 }

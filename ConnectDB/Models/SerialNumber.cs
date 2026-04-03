@@ -28,11 +28,11 @@ namespace ConnectDB.Models
         // Khóa ngoại lưu vết Nhập kho
         public int? InboundTransactionId { get; set; }
         [ForeignKey("InboundTransactionId")]
-        public virtual InventoryTransaction InboundTransaction { get; set; }
+        public virtual InventoryTransaction? InboundTransaction { get; set; }
 
         // Khóa ngoại lưu vết Xuất kho (Cho phép Null vì lúc mới nhập chưa xuất)
         public int? OutboundTransactionId { get; set; }
         [ForeignKey("OutboundTransactionId")]
-        public virtual InventoryTransaction OutboundTransaction { get; set; }
+        public virtual InventoryTransaction? OutboundTransaction { get; set; }
     }
 }

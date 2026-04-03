@@ -15,6 +15,6 @@ namespace ConnectDB.Models
         public string Description { get; set; }
 
         // Navigation Property: 1 Category có nhiều Product
-        public virtual ICollection<Product> Products { get; set; }
+        public virtual ICollection<Product>? Products { get; set; }
     }
 }
