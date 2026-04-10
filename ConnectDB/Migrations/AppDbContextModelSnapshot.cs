@@ -83,12 +83,10 @@ namespace ConnectDB.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Note")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("TransportInfo")
-                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
@@ -97,7 +95,12 @@ namespace ConnectDB.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
                     b.HasKey("TransactionId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("InventoryTransactions");
                 });
@@ -144,7 +147,6 @@ namespace ConnectDB.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SerialId"));
 
                     b.Property<string>("ConditionNote")
-                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
@@ -181,30 +183,48 @@ namespace ConnectDB.Migrations
                     b.ToTable("SerialNumbers");
                 });
 
-            modelBuilder.Entity("ConnectDB.Modles.Student", b =>
+            modelBuilder.Entity("ConnectDB.Models.User", b =>
                 {
-                    b.Property<int>("Id")
+                    b.Property<int>("UserId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("Birthday")
-                        .HasColumnType("datetime2");
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
 
                     b.Property<string>("FullName")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("StudentCode")
+                    b.Property<string>("PasswordHash")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.HasKey("Id");
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
-                    b.ToTable("Students");
+                    b.HasKey("UserId");
+
+                    b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("ConnectDB.Models.InventoryTransaction", b =>
+                {
+                    b.HasOne("ConnectDB.Models.User", "User")
+                        .WithMany("InventoryTransactions")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ConnectDB.Models.Product", b =>
@@ -262,6 +282,11 @@ namespace ConnectDB.Migrations
             modelBuilder.Entity("ConnectDB.Models.Product", b =>
                 {
                     b.Navigation("SerialNumbers");
+                });
+
+            modelBuilder.Entity("ConnectDB.Models.User", b =>
+                {
+                    b.Navigation("InventoryTransactions");
                 });
 #pragma warning restore 612, 618
         }

@@ -17,10 +17,10 @@ namespace ConnectDB.Models
         public DateTime? ActualTime { get; set; }
 
         [MaxLength(200)]
-        public string TransportInfo { get; set; }
+        public string? TransportInfo { get; set; }
 
         [MaxLength(500)]
-        public string Note { get; set; }
+        public string? Note { get; set; }
 
         // BỔ SUNG PHẦN NÀY: Lưu vết nhân viên tạo phiếu
         [Required]

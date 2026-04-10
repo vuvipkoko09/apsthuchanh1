@@ -17,7 +17,7 @@ namespace ConnectDB.Models
         public string Status { get; set; } // IN_STOCK, SOLD, DAMAGED
 
         [MaxLength(500)]
-        public string ConditionNote { get; set; } // Ghi chú tình trạng nếu hư hỏng
+        public string? ConditionNote { get; set; } // Ghi chú tình trạng nếu hư hỏng
 
         // Khóa ngoại liên kết tới Product
         [Required]

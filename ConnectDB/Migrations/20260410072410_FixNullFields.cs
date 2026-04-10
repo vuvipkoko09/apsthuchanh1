@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace ConnectDB.Migrations
 {
     /// <inheritdoc />
-    public partial class InitWMSDatabase : Migration
+    public partial class FixNullFields : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -40,20 +40,19 @@ namespace ConnectDB.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "InventoryTransactions",
+                name: "Users",
                 columns: table => new
                 {
-                    TransactionId = table.Column<int>(type: "int", nullable: false)
+                    UserId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Type = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ActualTime = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    TransportInfo = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    Note = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false)
+                    Username = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    FullName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Role = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_InventoryTransactions", x => x.TransactionId);
+                    table.PrimaryKey("PK_Users", x => x.UserId);
                 });
 
             migrationBuilder.CreateTable(
@@ -85,6 +84,30 @@ namespace ConnectDB.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "InventoryTransactions",
+                columns: table => new
+                {
+                    TransactionId = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Type = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ActualTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    TransportInfo = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    Note = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    UserId = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_InventoryTransactions", x => x.TransactionId);
+                    table.ForeignKey(
+                        name: "FK_InventoryTransactions_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "SerialNumbers",
                 columns: table => new
                 {
@@ -92,7 +115,7 @@ namespace ConnectDB.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     ImeiCode = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    ConditionNote = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    ConditionNote = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     ProductId = table.Column<int>(type: "int", nullable: false),
                     InboundTransactionId = table.Column<int>(type: "int", nullable: true),
                     OutboundTransactionId = table.Column<int>(type: "int", nullable: true)
@@ -117,6 +140,11 @@ namespace ConnectDB.Migrations
                         principalColumn: "ProductId",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_InventoryTransactions_UserId",
+                table: "InventoryTransactions",
+                column: "UserId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Products_BrandId",
@@ -161,6 +189,9 @@ namespace ConnectDB.Migrations
 
             migrationBuilder.DropTable(
                 name: "Products");
+
+            migrationBuilder.DropTable(
+                name: "Users");
 
             migrationBuilder.DropTable(
                 name: "Brands");
