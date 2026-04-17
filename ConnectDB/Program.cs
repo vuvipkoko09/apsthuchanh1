@@ -17,7 +17,17 @@ builder.Services.AddControllers()
         // Chặn lỗi vòng lặp vô hạn khi Include các bảng liên kết
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()  // Cho phép mọi Frontend (React Local, Vercel, Netlify) gọi vào
+              .AllowAnyMethod()  // Cho phép mọi lệnh GET, POST, PUT, DELETE
+              .AllowAnyHeader(); // Cho phép gửi token, json...
+    });
+});
 var app = builder.Build();
+
 
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
@@ -26,7 +36,7 @@ var app = builder.Build();
 //    app.UseSwaggerUI();
 //}
 
-
+app.UseCors("AllowAll");
 app.UseSwagger();
 app.UseSwaggerUI();
 

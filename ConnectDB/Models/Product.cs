@@ -16,6 +16,8 @@ namespace ConnectDB.Models
         [MaxLength(200)]
         public string Name { get; set; }
 
+        public string? ImageUrl { get; set; }
+
         // Khóa ngoại liên kết tới Category
         [Required]
         public int CategoryId { get; set; }
