@@ -5,6 +5,10 @@ namespace ConnectDB.Models
 {
     public class Product
     {
+        public Product()
+        {
+            SerialNumbers = new HashSet<SerialNumber>();
+        }
         [Key]
         public int ProductId { get; set; }
 
@@ -32,5 +36,7 @@ namespace ConnectDB.Models
 
         // Navigation Property: 1 Product có nhiều mã IMEI
         public virtual ICollection<SerialNumber>? SerialNumbers { get; set; }
+
+
     }
 }

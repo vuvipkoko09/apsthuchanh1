@@ -1,4 +1,4 @@
-﻿using ConnectDB.Data;
+using ConnectDB.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -37,6 +37,7 @@ var app = builder.Build();
 //}
 
 app.UseCors("AllowAll");
+app.UseStaticFiles(); // Cho phép truy cập các file trong wwwroot
 app.UseSwagger();
 app.UseSwaggerUI();
 
