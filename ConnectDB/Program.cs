@@ -8,13 +8,9 @@ using ConnectDB.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 1. Đăng ký SQL Server
-//soome
-//builder.Services.AddDbContext<AppDbContext>(options =>
-//    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-
+// 1. Cấu hình Database (Dùng SQL Server cho Somee)
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Xóa ánh xạ claim cũ
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -36,8 +32,8 @@ builder.Services.AddAuthentication(options =>
         ValidateAudience = true,
         ValidateLifetime = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = "WMSApp",
-        ValidAudience = "WMSFrontend",
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"])),
         RoleClaimType = System.Security.Claims.ClaimTypes.Role,
         NameClaimType = System.Security.Claims.ClaimTypes.Name,
@@ -87,45 +83,40 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 
-// 4. Cấu hình CORS cho Vercel
+// 4. Cấu hình CORS (Cho phép link Vercel gọi vào)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
         policy.WithOrigins("https://anhvu-asp.vercel.app")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
 var app = builder.Build();
 
-// THỨ TỰ MIDDLEWARE (Rất quan trọng)
+// THỨ TỰ MIDDLEWARE
 app.UseCors("AllowAll");
 
-// Bật Swagger cho cả môi trường Production (Somee)
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "WMS API v1");
-    // Nếu muốn vào thẳng swagger khi mở link gốc, để RoutePrefix là chuỗi rỗng
-    // c.RoutePrefix = string.Empty; 
 });
 
-// 🔥 ĐOẠN CODE AUTO-REDIRECT: Vào link gốc sẽ tự nhảy sang Swagger
+// Auto-Redirect trang chủ sang Swagger
 app.MapGet("/", context =>
 {
     context.Response.Redirect("/swagger/index.html");
     return Task.CompletedTask;
 });
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-}
+
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
-app.Run($"http://0.0.0.0:{port}");
+
+// Khởi chạy mặc định cho IIS (Somee)
+app.Run();
