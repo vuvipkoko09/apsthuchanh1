@@ -47,7 +47,7 @@ namespace ConnectDB.Controllers
 
             // === Tạo JWT Token ===
             var jwtSettings = _config.GetSection("Jwt");
-            var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("WMS_SuperSecretKey_32Characters!@#"));
+            var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:SecretKey"]));
             var credentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]

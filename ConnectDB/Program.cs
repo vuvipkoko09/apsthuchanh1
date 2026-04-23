@@ -8,14 +8,14 @@ using ConnectDB.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Đăng ký SQL Server
+// 1. Đăng ký SQL Server
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Xóa ánh xạ claim cũ để dùng chuẩn Microsoft
+// Xóa ánh xạ claim cũ
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-// Cấu hình JWT Authentication
+// 2. Cấu hình JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -34,37 +34,10 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuerSigningKey = true,
         ValidIssuer = "WMSApp",
         ValidAudience = "WMSFrontend",
-        
-        // PHẢI KHỚP 100% VỚI AUTHCONTROLLER
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("WMS_SuperSecretKey_32Characters!@#")), 
-        
-        // Dùng chuẩn Microsoft để khớp với AuthController
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:SecretKey"])),
         RoleClaimType = System.Security.Claims.ClaimTypes.Role,
         NameClaimType = System.Security.Claims.ClaimTypes.Name,
         ClockSkew = TimeSpan.Zero
-    };
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
-        {
-            Console.WriteLine("🚨 JWT AUTH FAILED 🚨");
-            Console.WriteLine("Reason: " + context.Exception.Message);
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = context =>
-        {
-            Console.WriteLine("✅ JWT TOKEN VALIDATED OK ✅");
-            return Task.CompletedTask;
-        },
-        OnMessageReceived = context =>
-        {
-            var authHeader = context.Request.Headers["Authorization"].ToString();
-            if (!string.IsNullOrEmpty(authHeader))
-            {
-                Console.WriteLine("📩 ĐÃ NHẬN HEADER: " + authHeader.Substring(0, Math.Min(30, authHeader.Length)) + "...");
-            }
-            return Task.CompletedTask;
-        }
     };
 });
 
@@ -78,6 +51,8 @@ builder.Services.AddAuthorization(options =>
 
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddEndpointsApiExplorer();
+
+// 3. Cấu hình Swagger
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "WMS API", Version = "v1" });
@@ -95,11 +70,7 @@ builder.Services.AddSwaggerGen(c =>
         {
             new Microsoft.OpenApi.Models.OpenApiSecurityScheme
             {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                {
-                    Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" }
             },
             Array.Empty<string>()
         }
@@ -112,29 +83,42 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles;
     });
 
+// 4. Cấu hình CORS cho Vercel
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.AllowAnyOrigin() // Mở rộng để tránh lỗi CORS khi debug
+        policy.WithOrigins("https://anhvu-asp.vercel.app")
               .AllowAnyMethod()
-              .AllowAnyHeader();
+              .AllowAnyHeader()
+              .AllowCredentials();
     });
 });
 
 var app = builder.Build();
 
+// THỨ TỰ MIDDLEWARE (Rất quan trọng)
 app.UseCors("AllowAll");
-app.Use(async (context, next) =>
-{
-    Console.WriteLine($"--- Request: {context.Request.Method} {context.Request.Path} ---");
-    await next();
-});
-app.UseStaticFiles();
+
+// Bật Swagger cho cả môi trường Production (Somee)
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "WMS API v1");
+    // Nếu muốn vào thẳng swagger khi mở link gốc, để RoutePrefix là chuỗi rỗng
+    // c.RoutePrefix = string.Empty; 
+});
+
+// 🔥 ĐOẠN CODE AUTO-REDIRECT: Vào link gốc sẽ tự nhảy sang Swagger
+app.MapGet("/", context =>
+{
+    context.Response.Redirect("/swagger/index.html");
+    return Task.CompletedTask;
+});
+
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
 app.Run();
