@@ -1,10 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ConnectDB.Models
 {
-    public class Category
+    public class Category : AuditableEntity // Kế thừa log
     {
-        // Khởi tạo sẵn danh sách để tránh lỗi Null
         public Category()
         {
             Products = new HashSet<Product>();
@@ -20,10 +19,11 @@ namespace ConnectDB.Models
         [MaxLength(500)]
         public string Description { get; set; }
 
-        // Thêm cột lưu link ảnh
         public string? ImageUrl { get; set; }
 
-        // Navigation Property: 1 Category có nhiều Product
+        [MaxLength(20)]
+        public string Status { get; set; } = "Active";
+
         public virtual ICollection<Product>? Products { get; set; }
     }
 }

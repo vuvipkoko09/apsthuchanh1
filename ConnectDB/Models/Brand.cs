@@ -1,10 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ConnectDB.Models
 {
-    public class Brand
+    public class Brand : AuditableEntity // Kế thừa log
     {
-        // Khởi tạo sẵn danh sách để tránh lỗi Null
         public Brand()
         {
             Products = new HashSet<Product>();
@@ -20,10 +19,17 @@ namespace ConnectDB.Models
         [MaxLength(100)]
         public string Origin { get; set; }
 
-        // Đổi LogoUrl thành ImageUrl cho đồng bộ toàn hệ thống
         public string? ImageUrl { get; set; }
 
-        // Navigation Property: 1 Brand có nhiều Product
+        [MaxLength(255)]
+        public string? Website { get; set; }
+
+        [MaxLength(255)]
+        public string? ContactInfo { get; set; }
+
+        [MaxLength(20)]
+        public string Status { get; set; } = "Active";
+
         public virtual ICollection<Product>? Products { get; set; }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace ConnectDB.DTOs
 {
@@ -16,6 +16,8 @@ namespace ConnectDB.DTOs
         [Required] public int ProductId { get; set; }
         public string? TransportInfo { get; set; }
         public string? Note { get; set; }
+        public string? ReferenceNumber { get; set; }
+        public decimal TotalAmount { get; set; }
         [Required]
         [MinLength(1, ErrorMessage = "Phải có ít nhất 1 IMEI")]
         public List<string> Imeis { get; set; }
@@ -27,6 +29,8 @@ namespace ConnectDB.DTOs
         [Required] public int UserId { get; set; } // Nhân viên thao tác
         public string? TransportInfo { get; set; }
         public string? Note { get; set; }
+        public string? ReferenceNumber { get; set; }
+        public decimal TotalAmount { get; set; }
         [Required]
         [MinLength(1, ErrorMessage = "Phải quét ít nhất 1 IMEI")]
         public List<string> Imeis { get; set; }

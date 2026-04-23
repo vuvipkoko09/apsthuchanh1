@@ -12,7 +12,6 @@ namespace ConnectDB.Controllers
 
         public UploadController(IConfiguration config)
         {
-            // Lấy thông tin từ appsettings.json để mở khóa Cloudinary
             var account = new Account(
                 config["Cloudinary:CloudName"],
                 config["Cloudinary:ApiKey"],
@@ -24,27 +23,53 @@ namespace ConnectDB.Controllers
         [HttpPost("image")]
         public async Task<IActionResult> UploadImage(IFormFile file)
         {
-            if (file == null || file.Length == 0)
-                return BadRequest("Không tìm thấy file hợp lệ.");
-
-            // Đọc file gửi lên thành luồng (Stream)
-            using var stream = file.OpenReadStream();
-
-            // Đóng gói gửi lên mây
-            var uploadParams = new ImageUploadParams
+            try 
             {
-                File = new FileDescription(file.FileName, stream),
-                Folder = "WMS_Products", // Nó sẽ tự tạo thư mục này trên mây cho gọn gàng
-                Transformation = new Transformation().Width(800).Height(800).Crop("limit") // Tự động bóp size ảnh cho nhẹ DB
-            };
+                if (file == null || file.Length == 0)
+                    return BadRequest(new { message = "Không tìm thấy file hợp lệ." });
 
-            var uploadResult = await _cloudinary.UploadAsync(uploadParams);
+                using var stream = file.OpenReadStream();
+                var uploadParams = new ImageUploadParams
+                {
+                    File = new FileDescription(file.FileName, stream)
+                };
 
-            if (uploadResult.Error != null)
-                return StatusCode(500, uploadResult.Error.Message);
+                var uploadResult = await _cloudinary.UploadAsync(uploadParams);
 
-            // Trả về cái Link ảnh trực tiếp (SecureUrl)
-            return Ok(new { imageUrl = uploadResult.SecureUrl.ToString() });
+                if (uploadResult.Error != null)
+                {
+                    return StatusCode(500, new { message = "Lỗi Cloudinary: " + uploadResult.Error.Message });
+                }
+
+                return Ok(new { imageUrl = uploadResult.SecureUrl.ToString() });
+            }
+            catch (Exception ex) 
+            {
+                return StatusCode(500, new { message = "Lỗi hệ thống khi upload: " + ex.Message });
+            }
+        }
+
+        [HttpDelete("image")]
+        public async Task<IActionResult> DeleteImage([FromQuery] string imageUrl)
+        {
+            if (string.IsNullOrEmpty(imageUrl)) return BadRequest("Url không hợp lệ.");
+
+            try
+            {
+                var uri = new Uri(imageUrl);
+                var segments = uri.Segments;
+                var fileName = segments.Last();
+                var publicId = "WMS_Products/" + Path.GetFileNameWithoutExtension(fileName);
+
+                var deletionParams = new DeletionParams(publicId);
+                var result = await _cloudinary.DestroyAsync(deletionParams);
+
+                return Ok(new { result = result.Result });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Lỗi xóa ảnh: " + ex.Message });
+            }
         }
     }
 }

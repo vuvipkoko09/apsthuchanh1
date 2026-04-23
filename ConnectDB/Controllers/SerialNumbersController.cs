@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ConnectDB.Models;
 using ConnectDB.Data;
@@ -48,6 +48,15 @@ namespace ConnectDB.Controllers
                 .Include(s => s.Product)
                 .Include(s => s.InboundTransaction) // Để biết xe nào làm hỏng mà đền bù
                 .Where(s => s.Status == "DAMAGED")
+                .ToListAsync();
+        }
+
+        // Lấy các SerialNumber đang trong kho của 1 sản phẩm cụ thể
+        [HttpGet("product/{productId}")]
+        public async Task<ActionResult<IEnumerable<SerialNumber>>> GetSerialsByProduct(int productId)
+        {
+            return await _context.SerialNumbers
+                .Where(s => s.ProductId == productId && s.Status == "IN_STOCK")
                 .ToListAsync();
         }
     }

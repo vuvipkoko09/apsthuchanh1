@@ -1,6 +1,7 @@
-﻿using ConnectDB.Data;
+using ConnectDB.Data;
 using ConnectDB.DTOs;
 using ConnectDB.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +9,7 @@ namespace ConnectDB.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize] // Cả Admin và Staff đều được thao tác kho - chỉ cần đăng nhập
     public class InventoryTransactionsController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -23,7 +25,7 @@ namespace ConnectDB.Controllers
         {
             return await _context.InventoryTransactions
                 .Include(t => t.User)
-                .OrderByDescending(t => t.CreatedDate)
+                .OrderByDescending(t => t.CreatedAt)
                 .ToListAsync();
         }
 
@@ -77,10 +79,13 @@ namespace ConnectDB.Controllers
                 {
                     UserId = request.UserId,
                     Type = "INBOUND",
-                    CreatedDate = DateTime.Now,
+                    CreatedAt = DateTime.Now,
                     ActualTime = DateTime.Now,
                     TransportInfo = request.TransportInfo,
-                    Note = request.Note
+                    Note = request.Note,
+                    ReferenceNumber = request.ReferenceNumber,
+                    TotalAmount = request.TotalAmount,
+                    Status = "Completed"
                 };
                 _context.InventoryTransactions.Add(newTrans);
                 await _context.SaveChangesAsync();
@@ -98,6 +103,9 @@ namespace ConnectDB.Controllers
                 await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
+
+                await LogAction("INBOUND", newTrans.TransactionId.ToString(), $"Nhập kho {request.Imeis.Count} máy cho sản phẩm ID {request.ProductId}");
+
                 return Ok(new { message = $"Nhập kho thành công {request.Imeis.Count} máy!", transactionId = newTrans.TransactionId });
             }
             catch (Exception ex)
@@ -138,10 +146,13 @@ namespace ConnectDB.Controllers
                 {
                     UserId = request.UserId,
                     Type = "OUTBOUND",
-                    CreatedDate = DateTime.Now,
+                    CreatedAt = DateTime.Now,
                     ActualTime = DateTime.Now,
                     TransportInfo = request.TransportInfo,
-                    Note = request.Note
+                    Note = request.Note,
+                    ReferenceNumber = request.ReferenceNumber,
+                    TotalAmount = request.TotalAmount,
+                    Status = "Completed"
                 };
                 _context.InventoryTransactions.Add(newTrans);
                 await _context.SaveChangesAsync();
@@ -156,6 +167,8 @@ namespace ConnectDB.Controllers
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                await LogAction("OUTBOUND", newTrans.TransactionId.ToString(), $"Xuất kho {request.Imeis.Count} máy");
+
                 return Ok(new { message = $"Xuất kho thành công {request.Imeis.Count} máy!", transactionId = newTrans.TransactionId });
             }
             catch (Exception ex)
@@ -163,6 +176,26 @@ namespace ConnectDB.Controllers
                 await transaction.RollbackAsync();
                 return StatusCode(500, new { message = "Lỗi hệ thống: " + ex.Message });
             }
+        }
+
+        private async Task LogAction(string action, string entityId, string changes)
+        {
+            var userId = User.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+            var userName = User.Identity?.Name;
+
+            var log = new AuditLog
+            {
+                UserId = userId,
+                UserName = userName,
+                Action = action,
+                EntityName = "InventoryTransaction",
+                EntityId = entityId,
+                Changes = changes,
+                Timestamp = DateTime.Now
+            };
+
+            _context.AuditLogs.Add(log);
+            await _context.SaveChangesAsync();
         }
     }
 }

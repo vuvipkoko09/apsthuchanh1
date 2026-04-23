@@ -1,14 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ConnectDB.Models
 {
-    public class Product
+    public class Product : AuditableEntity // Kế thừa log
     {
         public Product()
         {
             SerialNumbers = new HashSet<SerialNumber>();
         }
+
         [Key]
         public int ProductId { get; set; }
 
@@ -22,21 +23,38 @@ namespace ConnectDB.Models
 
         public string? ImageUrl { get; set; }
 
-        // Khóa ngoại liên kết tới Category
+        // Đã khôi phục lại các cột giá trị thương mại
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal CostPrice { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal SellingPrice { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? PromotionalPrice { get; set; }
+
+        public int WarrantyMonths { get; set; }
+        
+        public string? Description { get; set; }
+        
+        public string? Specifications { get; set; }
+        
+        [MaxLength(20)]
+        public string Unit { get; set; } = "Unit";
+        
+        [MaxLength(20)]
+        public string Status { get; set; } = "Active"; // Active, Discontinued, OutOfStock
+
         [Required]
         public int CategoryId { get; set; }
         [ForeignKey("CategoryId")]
         public virtual Category? Category { get; set; }
 
-        // Khóa ngoại liên kết tới Brand
         [Required]
         public int BrandId { get; set; }
         [ForeignKey("BrandId")]
         public virtual Brand? Brand { get; set; }
 
-        // Navigation Property: 1 Product có nhiều mã IMEI
         public virtual ICollection<SerialNumber>? SerialNumbers { get; set; }
-
-
     }
 }

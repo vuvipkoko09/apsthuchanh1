@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ConnectDB.Models;
 using ConnectDB.Data;
+using ConnectDB.DTOs;
 
 namespace ConnectDB.Controllers
 {
@@ -31,6 +32,9 @@ namespace ConnectDB.Controllers
             if (await _context.Users.AnyAsync(u => u.Username == user.Username))
                 return BadRequest(new { message = "Username này đã có người sử dụng!" });
 
+            // Mã hóa mật khẩu
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(user.PasswordHash);
+
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
@@ -39,14 +43,36 @@ namespace ConnectDB.Controllers
 
         // Sửa thông tin nhân viên
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateUser(int id, User user)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserUpdateDto updatedUser)
         {
-            if (id != user.UserId) return BadRequest("ID không hợp lệ!");
+            var existingUser = await _context.Users.FindAsync(id);
+            if (existingUser == null) return NotFound(new { message = "Không tìm thấy người dùng!" });
 
-            _context.Entry(user).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+            // Chỉ cập nhật các trường được phép sửa từ trang Profile
+            if (updatedUser.FullName != null) existingUser.FullName = updatedUser.FullName;
+            if (updatedUser.FirstName != null) existingUser.FirstName = updatedUser.FirstName;
+            if (updatedUser.LastName != null) existingUser.LastName = updatedUser.LastName;
+            if (updatedUser.Email != null) existingUser.Email = updatedUser.Email;
+            if (updatedUser.PhoneNumber != null) existingUser.PhoneNumber = updatedUser.PhoneNumber;
+            if (updatedUser.Address != null) existingUser.Address = updatedUser.Address;
+            if (updatedUser.Gender != null) existingUser.Gender = updatedUser.Gender;
+            
+            existingUser.Birthday = updatedUser.Birthday;
+            existingUser.UpdatedAt = DateTime.Now;
 
-            return Ok(new { message = "Cập nhật thành công!" });
+            // Nếu có gửi Avatar mới thì cập nhật
+            if (!string.IsNullOrEmpty(updatedUser.Avatar))
+                existingUser.Avatar = updatedUser.Avatar;
+
+            try
+            {
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Cập nhật thành công!" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = "Lỗi khi lưu dữ liệu: " + ex.Message });
+            }
         }
 
         // Xóa nhân viên
@@ -56,11 +82,15 @@ namespace ConnectDB.Controllers
             var user = await _context.Users.FindAsync(id);
             if (user == null) return NotFound();
 
-            // LUẬT: Không được xóa user đã từng làm phiếu kho (chỉ nên khóa tài khoản)
+            // LUẬT: Nếu nhân viên đã từng tham gia giao dịch, sử dụng Xóa mềm (Soft Delete)
             bool hasTransactions = await _context.InventoryTransactions.AnyAsync(t => t.UserId == id);
             if (hasTransactions)
             {
-                return BadRequest(new { message = "Không thể xóa! Nhân viên này đã từng tham gia xuất/nhập kho." });
+                user.IsDeleted = true;
+                user.DeletedAt = DateTime.Now;
+                user.Status = "Deleted";
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Nhân viên đã có giao dịch nên đã được chuyển sang trạng thái Đã xóa (Soft Delete)." });
             }
 
             _context.Users.Remove(user);

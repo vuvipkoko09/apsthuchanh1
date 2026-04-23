@@ -1,4 +1,4 @@
-﻿using ConnectDB.Models;
+using ConnectDB.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConnectDB.Data;
@@ -12,6 +12,13 @@ public class AppDbContext : DbContext
     public DbSet<InventoryTransaction> InventoryTransactions { get; set; }
     public DbSet<SerialNumber> SerialNumbers { get; set; }
     public DbSet<User> Users { get; set; }
+    
+    // WMS Advanced Features
+    public DbSet<DamageReport> DamageReports { get; set; }
+    public DbSet<Shipment> Shipments { get; set; }
+    public DbSet<InventoryCheck> InventoryChecks { get; set; }
+    public DbSet<InventoryCheckDetail> InventoryCheckDetails { get; set; }
+    public DbSet<AuditLog> AuditLogs { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
