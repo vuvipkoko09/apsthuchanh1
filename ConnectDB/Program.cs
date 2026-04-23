@@ -9,8 +9,12 @@ using ConnectDB.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Đăng ký SQL Server
+//soome
+//builder.Services.AddDbContext<AppDbContext>(options =>
+//    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Xóa ánh xạ claim cũ
 System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
@@ -90,8 +94,7 @@ builder.Services.AddCors(options =>
     {
         policy.WithOrigins("https://anhvu-asp.vercel.app")
               .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+              .AllowAnyHeader();
     });
 });
 
@@ -115,7 +118,11 @@ app.MapGet("/", context =>
     context.Response.Redirect("/swagger/index.html");
     return Task.CompletedTask;
 });
-
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.Migrate();
+}
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
